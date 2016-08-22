@@ -31,8 +31,11 @@ module.exports = function(context) {
     var config_xml = path.join(context.opts.projectRoot, 'config.xml');
     var et = context.requireCordovaModule('elementtree');
 
-    var data = fs.readFileSync(config_xml).toString();
-    var etree = et.parse(data);
+    function parseXml(filename) {
+        return new et.ElementTree(et.XML(fs.readFileSync(filename, "utf-8").replace(/^\uFEFF/, "")));
+    }
+
+    var etree = parseXml(config_xml);
 
     var content_tags = etree.findall('./content[@src]');
     if (content_tags.length > 0) {
@@ -58,5 +61,5 @@ module.exports = function(context) {
     }
 
     data = etree.write({'indent': 4});
-    fs.writeFileSync(config_xml, data);
+    fs.writeFileSync(config_xml, data, "utf-8");
 }

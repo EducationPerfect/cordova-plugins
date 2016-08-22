@@ -22,26 +22,33 @@
 // This script modifies the project root's config.xml
 // The <content> tag "src" attribute is modified to point to http://localhost:0
 
-var content_src_value = "http://localhost:0";
 var fs = require('fs');
 var path = require('path');
+var URI = require('urijs');
 var old_content_src_value;
 
 module.exports = function(context) {
     var config_xml = path.join(context.opts.projectRoot, 'config.xml');
     var et = context.requireCordovaModule('elementtree');
 
-    var data = fs.readFileSync(config_xml).toString();
-    var etree = et.parse(data);
+    function parseXml(filename) {
+        return new et.ElementTree(et.XML(fs.readFileSync(filename, "utf-8").replace(/^\uFEFF/, "")));
+    }
+
+    var etree = parseXml(config_xml);
 
     var content_tags = etree.findall('./content[@src]');
     if (content_tags.length > 0) {
         old_content_src_value = content_tags[0].get('src');
-        var backup_json = path.join(context.opts.plugin.dir, 'backup.json');
-        var backup_value = { content_src : old_content_src_value };
-        fs.writeFileSync(backup_json, JSON.stringify(backup_value));
+        var content_src = URI.parse(old_content_src_value);
+        if (content_src.hostname !== 'localhost') {
+            var backup_json = path.join(context.opts.plugin.dir, 'backup.json');
+            var backup_value = { content_src : old_content_src_value };
+            fs.writeFileSync(backup_json, JSON.stringify(backup_value));
 
-        content_tags[0].set('src', content_src_value);
+            var path = content_src.path.startsWith('/') ? content_src.path.substr(1) : content_src.path;
+            content_tags[0].set('src', 'http://localhost:0/' + path);
+        }
     }
 
     var altcontentsrcTag = etree.findall("./preference[@name='AlternateContentSrc']");
@@ -53,5 +60,5 @@ module.exports = function(context) {
     }
 
     data = etree.write({'indent': 4});
-    fs.writeFileSync(config_xml, data);
+    fs.writeFileSync(config_xml, data, "utf-8");
 }
