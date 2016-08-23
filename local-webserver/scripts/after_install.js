@@ -22,12 +22,12 @@
 // This script modifies the project root's config.xml
 // The <content> tag "src" attribute is modified to point to http://localhost:0
 
-var fs = require('fs');
-var path = require('path');
-var URI = require('urijs');
-var old_content_src_value;
-
 module.exports = function(context) {
+    var path = require('path');
+    var fs = require('fs');
+    var URI = require('urijs');
+    var old_content_src_value;
+
     var config_xml = path.join(context.opts.projectRoot, 'config.xml');
     var et = context.requireCordovaModule('elementtree');
 
